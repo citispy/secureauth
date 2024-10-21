@@ -8,6 +8,8 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
+    // Koin needs to be configured first
+    configureKoin()
     // configureAuth() needs to be called before configureRouting()
     configureAuth()
     configureRouting()
