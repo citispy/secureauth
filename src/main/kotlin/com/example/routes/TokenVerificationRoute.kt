@@ -4,7 +4,9 @@ import com.example.common.Constants
 import com.example.common.getValue
 import com.example.domain.model.ApiRequest
 import com.example.domain.model.Endpoint
+import com.example.domain.model.User
 import com.example.domain.model.UserSession
+import com.example.domain.repository.UserDataSource
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier
 import com.google.api.client.http.javanet.NetHttpTransport
@@ -15,26 +17,51 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
 
-fun Route.tokenVerificationRoute(app: Application) {
+fun Route.tokenVerificationRoute(
+    app: Application,
+    userDataSource: UserDataSource
+) {
     post(Endpoint.TokenVerification.path) {
         val request = call.receive<ApiRequest>()
-        if (request.tokenId.isNotBlank()) {
-            val result = verifyGoogleTokenId(tokenId = request.tokenId)
-            if (result == null) {
-                redirectToUnauthorizedRoute(
-                    app = app,
-                    logMsg = "Token verification failed"
-                )
-            } else {
-                redirectToAuthorizedRoute(result, app)
-            }
-        } else {
+        if (request.tokenId.isBlank()) {
             redirectToUnauthorizedRoute(
                 app = app,
                 logMsg = "Empty token ID"
             )
+            return@post
+        }
+
+        val result = verifyGoogleTokenId(tokenId = request.tokenId)
+        if (result == null) {
+            redirectToUnauthorizedRoute(
+                app = app,
+                logMsg = "Token verification failed"
+            )
+            return@post
+        }
+
+        val user = getUser(result, app)
+        saveUserToDatabase(userDataSource, user).also { saved ->
+            if (saved) {
+                redirectToAuthorizedRoute(app)
+            } else {
+                redirectToUnauthorizedRoute(app, "Error saving user")
+            }
         }
     }
+}
+
+private suspend fun saveUserToDatabase(
+    userDataSource: UserDataSource,
+    user: User,
+): Boolean {
+    return userDataSource.saveUserInfo(user)
+}
+
+private suspend fun RoutingContext.redirectToAuthorizedRoute(app: Application) {
+    app.log.info("User successfully saved/retrieved")
+    call.sessions.set(UserSession(id = "123", name = "Yusuf"))
+    call.respondRedirect(Endpoint.Authorized.path)
 }
 
 private suspend fun RoutingContext.redirectToUnauthorizedRoute(app: Application, logMsg: String) {
@@ -42,17 +69,22 @@ private suspend fun RoutingContext.redirectToUnauthorizedRoute(app: Application,
     call.respondRedirect(Endpoint.Unauthorized.path)
 }
 
-private suspend fun RoutingContext.redirectToAuthorizedRoute(
+private fun getUser(
     result: GoogleIdToken,
     app: Application
-) {
+): User {
     val sub = result.getValue("sub")
     val name = result.getValue("name")
     val email = result.getValue("picture")
     val profilePhoto = result.getValue("picture")
     app.log.info("Token verification success: $name $email")
-    call.sessions.set(UserSession(id = "123", name = "Yusuf"))
-    call.respondRedirect(Endpoint.Authorized.path)
+
+    return User(
+        id = sub,
+        name = name,
+        email = email,
+        profilePhoto = profilePhoto
+    )
 }
 
 private fun verifyGoogleTokenId(tokenId: String): GoogleIdToken? {
