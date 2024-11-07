@@ -51,40 +51,9 @@ fun Route.tokenVerificationRoute(
     }
 }
 
-private suspend fun saveUserToDatabase(
-    userDataSource: UserDataSource,
-    user: User,
-): Boolean {
-    return userDataSource.saveUserInfo(user)
-}
-
-private suspend fun RoutingContext.redirectToAuthorizedRoute(app: Application) {
-    app.log.info("User successfully saved/retrieved")
-    call.sessions.set(UserSession(id = "123", name = "Yusuf"))
-    call.respondRedirect(Endpoint.Authorized.path)
-}
-
 private suspend fun RoutingContext.redirectToUnauthorizedRoute(app: Application, logMsg: String) {
     app.log.info(logMsg)
     call.respondRedirect(Endpoint.Unauthorized.path)
-}
-
-private fun getUser(
-    result: GoogleIdToken,
-    app: Application
-): User {
-    val sub = result.getValue("sub")
-    val name = result.getValue("name")
-    val email = result.getValue("picture")
-    val profilePhoto = result.getValue("picture")
-    app.log.info("Token verification success: $name $email")
-
-    return User(
-        id = sub,
-        name = name,
-        email = email,
-        profilePhoto = profilePhoto
-    )
 }
 
 private fun verifyGoogleTokenId(tokenId: String): GoogleIdToken? {
@@ -98,4 +67,38 @@ private fun verifyGoogleTokenId(tokenId: String): GoogleIdToken? {
     } catch (e: Exception) {
         null
     }
+}
+
+/**
+ * Returns a [User] from a [GoogleIdToken]
+ */
+private fun getUser(
+    result: GoogleIdToken,
+    app: Application
+): User {
+    val sub = result.getValue("sub")
+    val name = result.getValue("name")
+    val email = result.getValue("email")
+    val profilePhoto = result.getValue("picture")
+    app.log.info("Token verification success: $name $email")
+
+    return User(
+        id = sub,
+        name = name,
+        email = email,
+        profilePhoto = profilePhoto
+    )
+}
+
+private suspend fun saveUserToDatabase(
+    userDataSource: UserDataSource,
+    user: User,
+): Boolean {
+    return userDataSource.saveUserInfo(user)
+}
+
+private suspend fun RoutingContext.redirectToAuthorizedRoute(app: Application) {
+    app.log.info("User successfully saved/retrieved")
+    call.sessions.set(UserSession(id = "123", name = "Yusuf"))
+    call.respondRedirect(Endpoint.Authorized.path)
 }
