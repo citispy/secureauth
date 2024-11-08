@@ -43,7 +43,7 @@ fun Route.tokenVerificationRoute(
         val user = getUser(result, app)
         saveUserToDatabase(userDataSource, user).also { saved ->
             if (saved) {
-                redirectToAuthorizedRoute(app)
+                authorizeUser(app, user)
             } else {
                 redirectToUnauthorizedRoute(app, "Error saving user")
             }
@@ -97,8 +97,8 @@ private suspend fun saveUserToDatabase(
     return userDataSource.saveUserInfo(user)
 }
 
-private suspend fun RoutingContext.redirectToAuthorizedRoute(app: Application) {
+private suspend fun RoutingContext.authorizeUser(app: Application, user: User) {
     app.log.info("User successfully saved/retrieved")
-    call.sessions.set(UserSession(id = "123", name = "Yusuf"))
+    call.sessions.set(UserSession(id = user.id, name = user.name))
     call.respondRedirect(Endpoint.Authorized.path)
 }
