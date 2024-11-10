@@ -1,9 +1,10 @@
-package com.example.domain.model
+package com.example.domain.model.response
 
+import com.example.domain.model.User
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ApiResponse(
+data class GetUserResponse(
     val success: Boolean,
     val user: User? = null
 )

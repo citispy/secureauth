@@ -1,7 +1,7 @@
 package com.example.routes
 
 import com.example.common.Constants
-import com.example.domain.model.ApiResponse
+import com.example.domain.model.response.GetUserResponse
 import com.example.domain.model.Endpoint
 import com.example.domain.model.UserSession
 import com.example.domain.repository.UserDataSource
@@ -27,7 +27,7 @@ fun Route.getUserInfoRoute(
 
             try {
                 call.respond(
-                    message = ApiResponse(
+                    message = GetUserResponse(
                         success = true,
                         user = userDataSource.getUserInfo(userSession.id)
                     ),

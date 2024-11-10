@@ -2,10 +2,11 @@ package com.example.routes
 
 import com.example.common.Constants
 import com.example.common.getValue
-import com.example.domain.model.ApiRequest
+import com.example.common.redirectToUnauthorizedRoute
 import com.example.domain.model.Endpoint
 import com.example.domain.model.User
 import com.example.domain.model.UserSession
+import com.example.domain.model.requets.TokenVerificationRequest
 import com.example.domain.repository.UserDataSource
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier
@@ -22,7 +23,7 @@ fun Route.tokenVerificationRoute(
     userDataSource: UserDataSource
 ) {
     post(Endpoint.TokenVerification.path) {
-        val request = call.receive<ApiRequest>()
+        val request = call.receive<TokenVerificationRequest>()
         if (request.tokenId.isBlank()) {
             redirectToUnauthorizedRoute(
                 app = app,
@@ -49,11 +50,6 @@ fun Route.tokenVerificationRoute(
             }
         }
     }
-}
-
-private suspend fun RoutingContext.redirectToUnauthorizedRoute(app: Application, logMsg: String) {
-    app.log.info(logMsg)
-    call.respondRedirect(Endpoint.Unauthorized.path)
 }
 
 private fun verifyGoogleTokenId(tokenId: String): GoogleIdToken? {

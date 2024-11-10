@@ -1,8 +1,8 @@
 package com.example.routes
 
 import com.example.common.Constants
-import com.example.domain.model.ApiResponse
 import com.example.domain.model.Endpoint
+import com.example.domain.model.response.ApiResponse
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.response.*
