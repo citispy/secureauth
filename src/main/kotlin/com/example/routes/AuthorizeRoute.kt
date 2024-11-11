@@ -12,7 +12,10 @@ fun Route.authorizeRoute() {
     authenticate(configurations = arrayOf(Constants.AUTH_SESSION)) {
         get(Endpoint.Authorized.path) {
             call.respond(
-                message = ApiResponse(success = true),
+                message = ApiResponse(
+                    success = true,
+                    message = "User successfully verified"
+                ),
                 status = HttpStatusCode.OK
             )
         }
